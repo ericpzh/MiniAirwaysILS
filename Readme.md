@@ -14,7 +14,6 @@ Landing waypoint can only be placed a fixed distance away from the runway on the
 # How to Install
 
 - Switch the game to `mod_feat` [branch](https://partner.steamgames.com/doc/store/application/branches?) on Steam.
-- Backup and remove all `.dll` in `<path_to_game>\Mini Airways\BepInEx\plugins`.
 - Copy [MiniAirwaysILS.dll](https://github.com/ericpzh/MiniAirwaysILS/blob/main/bin/Debug/netstandard2.1/MiniAirwaysILS.dll) into `<path_to_game>\Mini Airways\BepInEx\plugins`
 
 ***
@@ -35,5 +34,4 @@ Landing waypoint can only be placed a fixed distance away from the runway on the
 # 如何安装
 
 - 右键库中的Mini Airways，[属性 - 测试版 - mod_feat](https://partner.steamgames.com/doc/store/application/branches?l=schinese), 更新。
-- 备份然后删除所有 `<path_to_game>\Mini Airways\BepInEx\plugins`里的`.dll`文件。
 - 复制[MiniAirwaysILS.dll](https://github.com/ericpzh/MiniAirwaysILS/blob/main/bin/Debug/netstandard2.1/MiniAirwaysILS.dll) 到 `<path_to_game>\Mini Airways\BepInEx\plugins`。
