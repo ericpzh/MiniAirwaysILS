@@ -59,25 +59,15 @@ namespace MiniAirwaysILS
         }
     }
 
-    [HarmonyPatch(typeof(PlaceableWaypoint), "GetInitialState", new Type[] {})]
-    class PatchGetInitialState
+    [HarmonyPatch(typeof(PlaceableWaypoint), "Start", new Type[] {})]
+    class PatchStart
     {
-        enum State
-        {
-            None,
-            WaitingForSelectingRunway,
-            WaitingForPlacing,
-            WaitingForLockingRotation,
-            WaitingForRepositioning
-        }
-
-        static void Postfix(ref PlaceableWaypoint __instance, ref Enum __result, ref bool ____isPlacingInit)
+        static void Postfix(ref PlaceableWaypoint __instance)
         {
             if (__instance is WaypointAutoLanding)
             {
-                __result = State.WaitingForSelectingRunway;
-                // Use as status flag of done placing.
-                ____isPlacingInit = true;
+                // Basically __instance.SetFieldValue<State>("state", State.WaitingForSelectingRunway):
+                __instance.GetType().GetField("state", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(__instance, 1 /* WaitingForSelectingRunway */);
             }
         }
     }
@@ -85,14 +75,6 @@ namespace MiniAirwaysILS
     [HarmonyPatch(typeof(PlaceableWaypoint), "Update", new Type[] {})]
     class PatchPlaceableWaypointUpdate
     {
-        enum State
-        {
-            None,
-            WaitingForSelectingRunway,
-            WaitingForPlacing,
-            WaitingForLockingRotation,
-            WaitingForRepositioning
-        }
 
         static Vector3 ClampToVP(Vector3 pos)
         {
@@ -101,43 +83,98 @@ namespace MiniAirwaysILS
             return new Vector3(Mathf.Clamp(pos.x, 0f - num2, num2), Mathf.Clamp(pos.y, 0f - num, num), pos.z);
         }
 
-        static bool Prefix(ref PlaceableWaypoint __instance, ref Enum ___state, ref GameObject ____runwayTakeoffPointSelector, ref Runway ____selectedRunway, ref GameObject ___PlaceProgress, ref TextMeshPro ___placeInstructionTMP, ref bool ____isPlacingInit)
+        static bool Prefix(ref PlaceableWaypoint __instance,  ref GameObject ____runwayTakeoffPointSelector, ref GameObject ___arrowContainer, ref bool ___canStartLockRotationProgress,
+                           ref float ___placeDirectionTimer, ref float ____selectRunwayTimer, ref float ___longPressPlaceTime, ref Material ___mat, ref Runway ____selectedRunway,
+                           ref GameObject ___PlaceProgress, ref TextMeshPro ___placeInstructionTMP)
         {
-            if (__instance is WaypointAutoLanding && ____isPlacingInit)
+            int state = (int)(__instance.GetType()?.GetField("state", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(__instance));
+            if (__instance is WaypointAutoLanding)
             {
+                Vector3 _mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+                Vector3 landingStartPoint;
+                Vector3 landingEndPoint;
+
                 if ((bool)___placeInstructionTMP)
                 {
                     ___placeInstructionTMP.gameObject.SetActive(value: false);
                 }
+                ___arrowContainer.SetActive(value: false);
 
-                ____runwayTakeoffPointSelector?.SetActive(value: true);
-                Vector3 _mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-                __instance.transform.position = new Vector3(_mousePos.x, _mousePos.y, 1f);
-                Vector3 landingStartPoint;
-                Vector3 landingEndPoint;
-                Runway runway = Runway.GetClosestRwyPoint(_mousePos, out landingStartPoint, out landingEndPoint);
-                if (!runway)
+                if (state == 1)
                 {
-                    if ((bool)____selectedRunway)
+                    ___mat.SetFloat("_Steps", 0f);
+                    Runway.ShowAllTakeoffPoints();
+                    ____runwayTakeoffPointSelector?.SetActive(value: true);
+                    __instance.transform.position = new Vector3(_mousePos.x, _mousePos.y, 1f);
+
+                    Runway runway = Runway.GetClosestRwyPoint(_mousePos, out landingStartPoint, out landingEndPoint);
+                    if (!runway)
+                    {
+                        if ((bool)____selectedRunway)
+                        {
+                            ____selectedRunway.HideRunwayDirectionIndicator();
+                            ____selectedRunway = null;
+                        }
+                        return false;
+                    }
+                    if ((bool)____selectedRunway && ____selectedRunway != runway)
                     {
                         ____selectedRunway.HideRunwayDirectionIndicator();
-                        ____selectedRunway = null;
                     }
+
+                    ____selectedRunway = runway;
+                    runway.ShowRunwayDirectionIndicator(landingStartPoint);
+
+                    __instance.transform.position = landingStartPoint;
+                    ___PlaceProgress.transform.position = landingStartPoint;
+
+                    if (Input.GetMouseButton(0))
+                    {
+                        if (____selectRunwayTimer >= ___longPressPlaceTime)
+                        {
+                            // Basically __instance.SetFieldValue<State>("state", State.WaitingForLockingRotation):
+                            runway.HideRunwayDirectionIndicator();
+                            __instance.GetType().GetField("state", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(__instance, 3 /* WaitingForLockingRotation */);
+                            Runway.HideAllTakeoffPoints();
+                            UnityEngine.Object.Destroy(____runwayTakeoffPointSelector);
+                        }
+                        else
+                        {
+                            ____selectRunwayTimer += Time.unscaledDeltaTime;
+                        }
+
+                    } else {
+                        __instance.ResetTimer();
+                    }
+
+                    if (___PlaceProgress.activeInHierarchy)
+                    {
+                        ___mat.SetFloat("_FillAmount", ____selectRunwayTimer / ___longPressPlaceTime);
+                    }
+
                     return false;
                 }
-                if ((bool)____selectedRunway && ____selectedRunway != runway)
+                else if (state == 3)
                 {
-                    ____selectedRunway.HideRunwayDirectionIndicator();
-                }
-                runway.ShowRunwayDirectionIndicator(landingStartPoint);
-                __instance.transform.position = landingStartPoint;
-                ___PlaceProgress.transform.position = landingStartPoint;
-                ____selectedRunway = runway;
+                    Runway runway = Runway.GetClosestRwyPoint(_mousePos, out landingStartPoint, out landingEndPoint);
 
-                if (Input.GetMouseButton(0))
-                {
+                    ___mat.SetFloat("_Steps", 0f);
+                    ___PlaceProgress.SetActive(value: true);
+                    if (!Input.GetMouseButton(0))
+                    {
+                        ___canStartLockRotationProgress = true;
+                    }
+                    if (Input.GetMouseButton(0) && ___canStartLockRotationProgress)
+                    {
+                        __instance.Invoke("AddToDirectionTimer", 0f);
+                    }
+                    else
+                    {
+                        __instance.ResetTimer();
+                    }
+
                     // SetHeading()
-                    runway.HideRunwayDirectionIndicator();
+                    ____selectedRunway.HideRunwayDirectionIndicator();
                     Vector3 position = (landingStartPoint - landingEndPoint) * 3f + landingStartPoint;
                     __instance.transform.position = ClampToVP(new Vector3(position.x, position.y, 1f));
                     __instance.SetFieldValue<Runway>("_targetRunway", runway);
@@ -157,16 +194,49 @@ namespace MiniAirwaysILS
                     UpgradeManager.Instance.ExtCompleteUpgrade();
 
                     __instance.Invoke("RenderLineIndicator", 0);
-                    ___state = State.None;
-                    ____isPlacingInit = false;
+
+                    // Basically __instance.SetFieldValue<State>("state", State.WaitingForRepositioning):
+                    __instance.GetType().GetField("state", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(__instance, 4 /*  WaitingForRepositioning */);
+                    
+                    if (___PlaceProgress.activeInHierarchy)
+                    {
+                        ___mat.SetFloat("_FillAmount", ___placeDirectionTimer / ___longPressPlaceTime);
+                    }
+
+                    return false;
                 }
+            }
+            return true;
+        }
+    }
+
+    [HarmonyPatch(typeof(PlaceableWaypoint), "OnMouseButtonDown", new Type[] {})]
+    class PatchOnMouseButtonDown
+    {
+        static bool Prefix(ref PlaceableWaypoint __instance, ref bool ___CanMove)
+        {
+            if (__instance is WaypointAutoLanding)
+            {
+                ___CanMove = false;
+            }
+            return true;
+        }
+    }
+
+    [HarmonyPatch(typeof(PlaceableWaypoint), "ProcessRedirect", new Type[] {})]
+    class PatchProcessRedirect
+    {
+        static bool Prefix(ref PlaceableWaypoint __instance, ref float ____removeTimer, ref float ___longPressUnPlaceTime)
+        {
+            if (__instance is WaypointAutoLanding)
+            {
+                ____removeTimer = ___longPressUnPlaceTime;
                 return false;
             }
             return true;
         }
     }
 
-    
     public static class ReflectionExtensions
     {
         public static T GetFieldValue<T>(this object obj, string name)
