@@ -125,8 +125,9 @@ namespace MiniAirwaysILS
                     ____selectedRunway = runway;
                     runway.ShowRunwayDirectionIndicator(landingStartPoint);
 
-                    __instance.transform.position = landingStartPoint;
-                    ___PlaceProgress.transform.position = landingStartPoint;
+                    Vector3 position = (landingStartPoint - landingEndPoint) * 3f / runway.LengthMultiplier + landingStartPoint;
+                    __instance.transform.position = ClampToVP(new Vector3(position.x, position.y, 1f));
+                    ___PlaceProgress.transform.position = ClampToVP(new Vector3(position.x, position.y, 1f));
 
                     if (Input.GetMouseButton(0))
                     {
@@ -175,7 +176,7 @@ namespace MiniAirwaysILS
 
                     // SetHeading()
                     ____selectedRunway.HideRunwayDirectionIndicator();
-                    Vector3 position = (landingStartPoint - landingEndPoint) * 3f + landingStartPoint;
+                    Vector3 position = (landingStartPoint - landingEndPoint) * 3f / runway.LengthMultiplier + landingStartPoint;
                     __instance.transform.position = ClampToVP(new Vector3(position.x, position.y, 1f));
                     __instance.SetFieldValue<Runway>("_targetRunway", runway);
                     __instance.SetFieldValue<Vector3>("_landingStartPoint", landingStartPoint);
