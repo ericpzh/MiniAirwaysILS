@@ -2,12 +2,10 @@
 using BepInEx.Logging;
 using HarmonyLib;
 using System;
-// using System.Collections.Generic;
 using System.Reflection;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-// using UnityEngine.UIElements.UIR;
 
 namespace MiniAirwaysILS
 {
@@ -232,6 +230,32 @@ namespace MiniAirwaysILS
             if (__instance is WaypointAutoLanding)
             {
                 ____removeTimer = ___longPressUnPlaceTime;
+                return false;
+            }
+            return true;
+        }
+    }
+
+    // No ground-to-ground collision on the same runway.
+    [HarmonyPatch(typeof(Aircraft), "AircraftCollideGameOver", new Type[] { typeof(Aircraft), typeof(Aircraft) })]
+    class PatchAircraftCollideGameOver
+    {
+        static bool Prefix(Aircraft aircraft1, Aircraft aircraft2)
+        {
+            if (aircraft1.state == Aircraft.State.TouchedDown && aircraft2.state == Aircraft.State.TakingOff && aircraft1.LandingRunway != aircraft2.takeOffRunway)
+            {
+                return false;
+            } else if (aircraft1.state == Aircraft.State.TakingOff && aircraft2.state == Aircraft.State.TouchedDown && aircraft1.takeOffRunway != aircraft2.LandingRunway)
+            {
+
+                return false;
+            } else if (aircraft1.state == Aircraft.State.TouchedDown && aircraft2.state == Aircraft.State.TouchedDown && aircraft1.LandingRunway != aircraft2.LandingRunway)
+            {
+
+                return false;
+            } else if (aircraft1.state == Aircraft.State.TakingOff && aircraft2.state == Aircraft.State.TakingOff && aircraft1.takeOffRunway != aircraft2.takeOffRunway)
+            {
+
                 return false;
             }
             return true;
