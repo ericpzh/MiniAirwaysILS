@@ -16,7 +16,7 @@ Collision is off for two aircraft are on the ground in different runway.
 # How to Install
 
 - Switch the game to `mod_feat` [branch](https://partner.steamgames.com/doc/store/application/branches?) on Steam.
-- Copy [MiniAirwaysILS.dll](https://github.com/ericpzh/MiniAirwaysILS/blob/main/bin/Debug/netstandard2.1/MiniAirwaysILS.dll) into `<path_to_game>\Mini Airways\BepInEx\plugins`
+- Download and move [MiniAirwaysILS.dll](https://github.com/ericpzh/MiniAirwaysILS/releases/download/Public/MiniAirwaysILS.dll) into `<path_to_game>\Mini Airways\BepInEx\plugins`
 
 ***
 
@@ -37,4 +37,4 @@ Collision is off for two aircraft are on the ground in different runway.
 # 如何安装
 
 - 右键库中的Mini Airways，[属性 - 测试版 - mod_feat](https://partner.steamgames.com/doc/store/application/branches?l=schinese), 更新。
-- 复制[MiniAirwaysILS.dll](https://github.com/ericpzh/MiniAirwaysILS/blob/main/bin/Debug/netstandard2.1/MiniAirwaysILS.dll) 到 `<path_to_game>\Mini Airways\BepInEx\plugins`。
+- 下载[MiniAirwaysILS.dll](https://github.com/ericpzh/MiniAirwaysILS/releases/download/Public/MiniAirwaysILS.dll) 到 `<path_to_game>\Mini Airways\BepInEx\plugins`。
