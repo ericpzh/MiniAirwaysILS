@@ -53,6 +53,15 @@ namespace MiniAirwaysILS
                 __instance.IsHovering = false;
                 __instance.speed = speed;
             }
+            if (__instance.state == Aircraft.State.TouchedDown)
+            {
+                Plugin.Log.LogInfo("S1");
+                __instance.Panel.transform.localScale = Vector3.zero;
+                Plugin.Log.LogInfo("S2");
+                SpriteRenderer component = __instance.Panel.GetComponent<SpriteRenderer>();
+                component.enabled = false;
+                Plugin.Log.LogInfo("S3");
+            }
             return true;
         }
     }
@@ -237,30 +246,27 @@ namespace MiniAirwaysILS
     }
 
     // No ground-to-ground collision on the same runway.
-    [HarmonyPatch(typeof(Aircraft), "AircraftCollideGameOver", new Type[] { typeof(Aircraft), typeof(Aircraft) })]
-    class PatchAircraftCollideGameOver
-    {
-        static bool Prefix(Aircraft aircraft1, Aircraft aircraft2)
-        {
-            if (aircraft1.state == Aircraft.State.TouchedDown && aircraft2.state == Aircraft.State.TakingOff && aircraft1.LandingRunway != aircraft2.takeOffRunway)
-            {
-                return false;
-            } else if (aircraft1.state == Aircraft.State.TakingOff && aircraft2.state == Aircraft.State.TouchedDown && aircraft1.takeOffRunway != aircraft2.LandingRunway)
-            {
-
-                return false;
-            } else if (aircraft1.state == Aircraft.State.TouchedDown && aircraft2.state == Aircraft.State.TouchedDown && aircraft1.LandingRunway != aircraft2.LandingRunway)
-            {
-
-                return false;
-            } else if (aircraft1.state == Aircraft.State.TakingOff && aircraft2.state == Aircraft.State.TakingOff && aircraft1.takeOffRunway != aircraft2.takeOffRunway)
-            {
-
-                return false;
-            }
-            return true;
-        }
-    }
+    // [HarmonyPatch(typeof(Aircraft), "AircraftCollideGameOver", new Type[] { typeof(Aircraft), typeof(Aircraft) })]
+    // class PatchAircraftCollideGameOver
+    // {
+    //     static bool Prefix(Aircraft aircraft1, Aircraft aircraft2)
+    //     {
+    //         if (aircraft1.state == Aircraft.State.TouchedDown && aircraft2.state == Aircraft.State.TakingOff && aircraft1.LandingRunway != aircraft2.takeOffRunway)
+    //         {
+    //             return false;
+    //         } else if (aircraft1.state == Aircraft.State.TakingOff && aircraft2.state == Aircraft.State.TouchedDown && aircraft1.takeOffRunway != aircraft2.LandingRunway)
+    //         {
+    //             return false;
+    //         } else if (aircraft1.state == Aircraft.State.TouchedDown && aircraft2.state == Aircraft.State.TouchedDown && aircraft1.LandingRunway != aircraft2.LandingRunway)
+    //         {
+    //             return false;
+    //         } else if (aircraft1.state == Aircraft.State.TakingOff && aircraft2.state == Aircraft.State.TakingOff && aircraft1.takeOffRunway != aircraft2.takeOffRunway)
+    //         {
+    //             return false;
+    //         }
+    //         return true;
+    //     }
+    // }
 
     public static class ReflectionExtensions
     {
